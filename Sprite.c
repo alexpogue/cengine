@@ -26,7 +26,6 @@ void Sprite_init(sprite_t *sprite, float x, float y, float width, float height)
     float vertData[12];
     if (sprite == NULL) {
         Errors_fatal("sprite is NULL in Sprite_init()");
-        return;
     }
 
     sprite->x = x;

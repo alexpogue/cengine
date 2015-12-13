@@ -16,7 +16,6 @@ glsl_program_t *GlslProgram_new()
     glsl_program_t *program = malloc(sizeof(glsl_program_t));
     if (program == NULL) {
         Errors_fatal("malloc failed in GlslProgram_new()");
-        return NULL;
     }
     program->programID = 0;
     program->vertexShaderID = 0;
@@ -31,26 +30,22 @@ ssize_t getFileContents(char **buf, char *filePath)
     long fileSize;
     if (buf == NULL || filePath == NULL) {
         Errors_fatal("Null arguments to getFileContents");
-        return -1;
     }
     fp = fopen(filePath, "r");
     if (fp == NULL) {
         Errors_fatal("Could not open file in getFileContents");
-        return -1;
     }
     fseek(fp, 0, SEEK_END);
     fileSize = ftell(fp);
     if (fileSize == -1) {
-        Errors_fatal("Could not get file size in getFileContents");
         fclose(fp);
-        return -1;
+        Errors_fatal("Could not get file size in getFileContents");
     }
     rewind(fp);
     *buf = realloc(*buf, fileSize + 1);
     if (*buf == NULL) {
-        Errors_fatal("Realloc failed in getFileContents");
         fclose(fp);
-        return -1;
+        Errors_fatal("Realloc failed in getFileContents");
     }
     fread(*buf, 1, fileSize, fp);
     (*buf)[fileSize] = 0;
@@ -83,7 +78,6 @@ void compileShader(GLuint id, char *filePath)
     ssize_t charsRead = getFileContents(&fileContents, filePath);
     if (charsRead == -1) {
         Errors_fatal("File read failed. Couldn't compile shader.");
-        return;
     }
     glShaderSource(id, 1, (const char **)&fileContents, NULL);
     glCompileShader(id);
@@ -95,7 +89,6 @@ void compileShader(GLuint id, char *filePath)
         errorLog = malloc(maxLength);
         if (errorLog == NULL) {
             Errors_fatal("malloc failed in compileShader.");
-            return;
         }
         glGetShaderInfoLog(id, maxLength, &maxLength, errorLog);
 
@@ -103,6 +96,7 @@ void compileShader(GLuint id, char *filePath)
 
         puts(errorLog);
         free(errorLog);
+        free(fileContents);
         Errors_fatal("Shader failed to compile");
     }
     free(fileContents);
@@ -116,17 +110,15 @@ void GlslProgram_compileShaders(glsl_program_t *program,
         vertexShaderFilePath == NULL ||
         fragmentShaderFilePath == NULL) {
         Errors_fatal("Null arguments to GlslProgram_compileShaders");
-        return;
     }
+    program->programID = glCreateProgram();
     program->vertexShaderID = glCreateShader(GL_VERTEX_SHADER);
     if (program->vertexShaderID == 0) {
         Errors_fatal("Vertex shader failed to be created!");
-        return;
     }
     program->fragmentShaderID = glCreateShader(GL_FRAGMENT_SHADER);
     if (program->fragmentShaderID == 0) {
         Errors_fatal("Fragment shader failed to be created!");
-        return;
     }
     compileShader(program->vertexShaderID, vertexShaderFilePath);
     compileShader(program->fragmentShaderID, fragmentShaderFilePath);
@@ -139,7 +131,6 @@ void GlslProgram_linkShaders(glsl_program_t *program)
     /* Vertex and fragment shaders are successfully compiled.
        Now time to link them together into a program.
        Get a program object. */
-    program->programID = glCreateProgram();
     programID = program->programID;
 
     /* Attach our shaders to our program */
