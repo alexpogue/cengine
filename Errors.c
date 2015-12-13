@@ -3,7 +3,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-void Errors_fatal(char *errorString) {
+void Errors_fatal(char *errorString)
+{
     if (errorString != NULL) {
         puts(errorString);
     }

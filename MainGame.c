@@ -31,7 +31,8 @@ void initShaders()
     GlslProgram_linkShaders(colorProgram);
 }
 
-void freeShaders() {
+void freeShaders()
+{
     GlslProgram_free(colorProgram);
 }
 
