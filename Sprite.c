@@ -11,6 +11,8 @@ struct sprite {
     GLuint vboID;
 };
 
+void getRectangleVertices(float *vertices, float x, float y, float w, float h);
+
 sprite_t *Sprite_new()
 {
     sprite_t *sprite = malloc(sizeof(sprite_t));
@@ -23,7 +25,7 @@ sprite_t *Sprite_new()
 
 void Sprite_init(sprite_t *sprite, float x, float y, float width, float height)
 {
-    float vertData[12];
+    float vertices[12];
     if (sprite == NULL) {
         Errors_fatal("sprite is NULL in Sprite_init()");
     }
@@ -37,31 +39,36 @@ void Sprite_init(sprite_t *sprite, float x, float y, float width, float height)
         glGenBuffers(1, &(sprite->vboID));
     }
 
+    getRectangleVertices(vertices, x, y, width, height);
+
+    glBindBuffer(GL_ARRAY_BUFFER, sprite->vboID);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, 0); /* unbind buffer */
+}
+
+void getRectangleVertices(float *vertices, float x, float y, float w, float h)
+{
     /* first triangle */
     /* top-right */
-    vertData[0] = x + width;
-    vertData[1] = y + height;
+    vertices[0] = x + w;
+    vertices[1] = y + h;
     /* top-left */
-    vertData[2] = x;
-    vertData[3] = y + height;
+    vertices[2] = x;
+    vertices[3] = y + h;
     /* bottom-left */
-    vertData[4] = x;
-    vertData[5] = y;
+    vertices[4] = x;
+    vertices[5] = y;
 
     /* second triangle */
     /* bottom-left */
-    vertData[6] = x;
-    vertData[7] = y;
+    vertices[6] = x;
+    vertices[7] = y;
     /* bottom-right */
-    vertData[8] = x + width;
-    vertData[9] = y;
+    vertices[8] = x + w;
+    vertices[9] = y;
     /* top-right */
-    vertData[10] = x + width;
-    vertData[11] = y + height;
-
-    glBindBuffer(GL_ARRAY_BUFFER, sprite->vboID);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertData), vertData, GL_STATIC_DRAW);
-    glBindBuffer(GL_ARRAY_BUFFER, 0); /* unbind buffer */
+    vertices[10] = x + w;
+    vertices[11] = y + h;
 }
 
 void Sprite_draw(sprite_t *sprite)

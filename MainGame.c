@@ -18,25 +18,31 @@ enum GameState { GAMESTATE_PLAY, GAMESTATE_EXIT };
 
 static int gameState = GAMESTATE_PLAY;
 
-void initShaders()
+void initGame(void);
+void initSystems(void);
+void initShaders(void);
+void gameLoop(void);
+void processInput(void);
+void drawGame(void);
+void freeGame(void);
+void freeSystems(void);
+void freeShaders(void);
+
+void MainGame_run(void)
 {
-    colorProgram = GlslProgram_new();
-    if (colorProgram == NULL) {
-        puts("Failed to create a GlslProgram in MainGame initShaders");
-    }
-    GlslProgram_compileShaders(colorProgram,
-                               "shaders/colorShading.vert",
-                               "shaders/colorShading.frag");
-    GlslProgram_addAttribute(colorProgram, "vertexPosition");
-    GlslProgram_linkShaders(colorProgram);
+    initGame();
+    gameLoop();
+    freeGame();
 }
 
-void freeShaders()
+void initGame(void)
 {
-    GlslProgram_free(colorProgram);
+    initSystems();
+    sprite = Sprite_new();
+    Sprite_init(sprite, -1.0f, -1.0f, 1.0f, 1.0f);
 }
 
-void initSystems()
+void initSystems(void)
 {
     GLenum error;
 
@@ -64,17 +70,25 @@ void initSystems()
     initShaders();
 }
 
-void freeSystems()
+void initShaders(void)
 {
-    freeShaders();
-    SDL_GL_DeleteContext(glContext);
-    if (window != NULL) {
-        SDL_DestroyWindow(window);
-    }
-    SDL_Quit();
+    colorProgram = GlslProgram_new();
+    GlslProgram_compileShaders(colorProgram,
+                               "shaders/colorShading.vert",
+                               "shaders/colorShading.frag");
+    GlslProgram_addAttribute(colorProgram, "vertexPosition");
+    GlslProgram_linkShaders(colorProgram);
 }
 
-void processInput()
+void gameLoop(void)
+{
+    while (gameState != GAMESTATE_EXIT) {
+        processInput();
+        drawGame();
+    }
+}
+
+void processInput(void)
 {
     SDL_Event e;
     while (SDL_PollEvent(&e)) {
@@ -89,7 +103,7 @@ void processInput()
     }
 }
 
-void drawGame()
+void drawGame(void)
 {
     glClearDepth(1.0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -100,20 +114,23 @@ void drawGame()
     SDL_GL_SwapWindow(window);
 }
 
-void gameLoop()
+void freeGame(void)
 {
-    while (gameState != GAMESTATE_EXIT) {
-        processInput();
-        drawGame();
-    }
-}
-
-void MainGame_run()
-{
-    initSystems();
-    sprite = Sprite_new();
-    Sprite_init(sprite, -1.0f, -1.0f, 1.0f, 1.0f);
-    gameLoop();
     Sprite_free(sprite);
     freeSystems();
+}
+
+void freeSystems(void)
+{
+    freeShaders();
+    SDL_GL_DeleteContext(glContext);
+    if (window != NULL) {
+        SDL_DestroyWindow(window);
+    }
+    SDL_Quit();
+}
+
+void freeShaders(void)
+{
+    GlslProgram_free(colorProgram);
 }

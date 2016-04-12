@@ -11,6 +11,9 @@ struct glsl_program {
     int numAttributes;
 };
 
+ssize_t getFileContents(char **buf, char *filePath);
+void compileShader(GLuint id, char *filePath);
+
 glsl_program_t *GlslProgram_new()
 {
     glsl_program_t *program = malloc(sizeof(glsl_program_t));
@@ -22,35 +25,6 @@ glsl_program_t *GlslProgram_new()
     program->fragmentShaderID = 0;
     program->numAttributes = 0;
     return program;
-}
-
-ssize_t getFileContents(char **buf, char *filePath)
-{
-    FILE *fp = NULL;
-    long fileSize;
-    if (buf == NULL || filePath == NULL) {
-        Errors_fatal("Null arguments to getFileContents");
-    }
-    fp = fopen(filePath, "r");
-    if (fp == NULL) {
-        Errors_fatal("Could not open file in getFileContents");
-    }
-    fseek(fp, 0, SEEK_END);
-    fileSize = ftell(fp);
-    if (fileSize == -1) {
-        fclose(fp);
-        Errors_fatal("Could not get file size in getFileContents");
-    }
-    rewind(fp);
-    *buf = realloc(*buf, fileSize + 1);
-    if (*buf == NULL) {
-        fclose(fp);
-        Errors_fatal("Realloc failed in getFileContents");
-    }
-    fread(*buf, 1, fileSize, fp);
-    (*buf)[fileSize] = 0;
-    fclose(fp);
-    return fileSize;
 }
 
 void GlslProgram_use(glsl_program_t *program)
@@ -69,6 +43,28 @@ void GlslProgram_unuse(glsl_program_t *program)
     for (i = 0; i < program->numAttributes; i++) {
         glDisableVertexAttribArray(i);
     }
+}
+
+void GlslProgram_compileShaders(glsl_program_t *program,
+                                char *vertexShaderFilePath,
+                                char *fragmentShaderFilePath)
+{
+    if (program == NULL ||
+        vertexShaderFilePath == NULL ||
+        fragmentShaderFilePath == NULL) {
+        Errors_fatal("Null arguments to GlslProgram_compileShaders");
+    }
+    program->programID = glCreateProgram();
+    program->vertexShaderID = glCreateShader(GL_VERTEX_SHADER);
+    if (program->vertexShaderID == 0) {
+        Errors_fatal("Vertex shader failed to be created!");
+    }
+    program->fragmentShaderID = glCreateShader(GL_FRAGMENT_SHADER);
+    if (program->fragmentShaderID == 0) {
+        Errors_fatal("Fragment shader failed to be created!");
+    }
+    compileShader(program->vertexShaderID, vertexShaderFilePath);
+    compileShader(program->fragmentShaderID, fragmentShaderFilePath);
 }
 
 void compileShader(GLuint id, char *filePath)
@@ -102,26 +98,33 @@ void compileShader(GLuint id, char *filePath)
     free(fileContents);
 }
 
-void GlslProgram_compileShaders(glsl_program_t *program,
-                                char *vertexShaderFilePath,
-                                char *fragmentShaderFilePath)
+ssize_t getFileContents(char **buf, char *filePath)
 {
-    if (program == NULL ||
-        vertexShaderFilePath == NULL ||
-        fragmentShaderFilePath == NULL) {
-        Errors_fatal("Null arguments to GlslProgram_compileShaders");
+    FILE *fp = NULL;
+    long fileSize;
+    if (buf == NULL || filePath == NULL) {
+        Errors_fatal("Null arguments to getFileContents");
     }
-    program->programID = glCreateProgram();
-    program->vertexShaderID = glCreateShader(GL_VERTEX_SHADER);
-    if (program->vertexShaderID == 0) {
-        Errors_fatal("Vertex shader failed to be created!");
+    fp = fopen(filePath, "r");
+    if (fp == NULL) {
+        Errors_fatal("Could not open file in getFileContents");
     }
-    program->fragmentShaderID = glCreateShader(GL_FRAGMENT_SHADER);
-    if (program->fragmentShaderID == 0) {
-        Errors_fatal("Fragment shader failed to be created!");
+    fseek(fp, 0, SEEK_END);
+    fileSize = ftell(fp);
+    if (fileSize == -1) {
+        fclose(fp);
+        Errors_fatal("Could not get file size in getFileContents");
     }
-    compileShader(program->vertexShaderID, vertexShaderFilePath);
-    compileShader(program->fragmentShaderID, fragmentShaderFilePath);
+    rewind(fp);
+    *buf = realloc(*buf, fileSize + 1);
+    if (*buf == NULL) {
+        fclose(fp);
+        Errors_fatal("Realloc failed in getFileContents");
+    }
+    fread(*buf, 1, fileSize, fp);
+    (*buf)[fileSize] = 0;
+    fclose(fp);
+    return fileSize;
 }
 
 void GlslProgram_linkShaders(glsl_program_t *program)

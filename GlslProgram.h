@@ -3,7 +3,7 @@
 
 typedef struct glsl_program glsl_program_t;
 
-glsl_program_t *GlslProgram_new();
+glsl_program_t *GlslProgram_new(void);
 void GlslProgram_compileShaders(glsl_program_t *program,
                                 char *vertexShaderFilePath,
                                 char *fragmentShaderFilePath);
